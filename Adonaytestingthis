@@ -1,0 +1,732 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Adonays personal fich hub",
+    Icon = 0,
+    LoadingTitle = "Adonays personal fich hub",
+    LoadingSubtitle = "by adonay",
+    Theme = "Default",
+    DisableRayfieldPrompts = false,
+    DisableBuildWarnings = false,
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "Big Hub"
+    },
+    Discord = {
+        Enabled = false,
+        Invite = "noinvitelink",
+        RememberJoins = true
+    },
+    KeySystem = false,
+    KeySettings = {
+        Title = "Untitled",
+        Subtitle = "Key System",
+        Note = "No method of obtaining the key is provided",
+        FileName = "Key",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"Hello"}
+    }
+})
+
+local MainTab = Window:CreateTab("Fishing", 4483362458)
+local TeleportTab = Window:CreateTab("Teleport", 4483362458)
+local ItemsTab = Window:CreateTab("Item", 4483362458)
+local AutosTab = Window:CreateTab("INFO", 4483362458)
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local ShopTab = Window:CreateTab("Shop", 4483362458)
+local WebhookTab = Window:CreateTab("Webhook", 4483362458)
+local OthersTab = Window:CreateTab("Others", 4483362458)
+local BypassTab = Window:CreateTab("Bypass", 4483362458)
+local ProtectionTab = Window:CreateTab("Protection", 4483362458)
+
+local flags = {
+    autoreel = false,
+    autoreel_brilliant = false,
+    autoreel_nonperfect = false,
+    autoshake = false,
+    autocast = false,
+    freezechar = false,
+    freezeplayer = false
+}
+
+local lp = game.Players.LocalPlayer
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local PlayerGui = lp:WaitForChild("PlayerGui")
+local characterposition = nil
+
+local function gethrp()
+    return lp.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function FindRod()
+    for _, tool in pairs(lp.Backpack:GetChildren()) do
+        if tool.Name == "FlimsyRod" then
+            return tool
+        end
+    end
+    for _, tool in pairs(lp.Character:GetChildren()) do
+        if tool.Name == "FlimsyRod" then
+            return tool
+        end
+    end
+    return nil
+end
+
+-- Auto Cast
+local farm = {reel_tick = nil, cast_tick = nil, is_shaking = false}
+
+function farm.find_rod()
+    local character = lp.Character
+    if not character then return nil end
+
+    for _, tool in ipairs(character:GetChildren()) do
+        if tool:IsA("Tool") and (tool.Name:find("rod") or tool.Name:find("Rod")) then
+            return tool
+        end
+    end
+    return nil
+end
+
+function farm.cast()
+    local rod = farm.find_rod()
+    if rod then
+        rod.events.cast:FireServer(100, 1)
+    end
+end
+
+-- Normal Section
+local NormalSection = MainTab:CreateSection("Normal")
+
+local ToggleAutoCast = MainTab:CreateToggle({
+    Name = "Auto Cast",
+    CurrentValue = false,
+    Flag = "AutoCastToggle",
+    Callback = function(Value)
+        flags.autocast = Value
+        if flags.autocast then
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Cast",
+                Text = "Auto Cast Enabled",
+                Duration = 5
+            })
+            spawn(function()
+                while flags.autocast and task.wait(0.5) do
+                    if flags.freezeplayer and characterposition == nil then
+                        characterposition = gethrp().CFrame
+                    end
+                    if flags.freezeplayer and characterposition ~= nil then
+                        gethrp().CFrame = characterposition
+                    end
+                    farm.cast()
+                end
+            end)
+        else
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Cast",
+                Text = "Auto Cast Disabled",
+                Duration = 5
+            })
+            characterposition = nil
+        end
+    end
+})
+
+local ToggleAutoReel = MainTab:CreateToggle({
+    Name = "Auto Reel",
+    CurrentValue = false,
+    Flag = "AutoReelToggle",
+    Callback = function(Value)
+        flags.autoreel = Value
+        if flags.autoreel then
+            Connections.AutoReel = RunService.RenderStepped:Connect(function()
+                local reel = lp.PlayerGui:FindFirstChild("reel")
+                if not reel then return end
+                local bar = reel:FindFirstChild("bar")
+                if not bar then return end
+                local playerbar = bar:FindFirstChild("playerbar")
+                local fish = bar:FindFirstChild("fish")
+                if not playerbar or not fish then return end
+                if flags.freezeplayer and characterposition == nil then
+                    characterposition = gethrp().CFrame
+                end
+                if flags.freezeplayer and characterposition ~= nil then
+                    gethrp().CFrame = characterposition
+                end
+                playerbar.Position = fish.Position
+            end)
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Reel",
+                Text = "Auto Reel Enabled",
+                Duration = 5
+            })
+        else
+            if Connections.AutoReel then Connections.AutoReel:Disconnect() end
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Reel",
+                Text = "Auto Reel Disabled",
+                Duration = 5
+            })
+            characterposition = nil
+        end
+    end
+})
+
+local ToggleAutoShake = MainTab:CreateToggle({
+    Name = "Auto Shake",
+    CurrentValue = false,
+    Flag = "AutoShakeToggle",
+    Callback = function(Value)
+        flags.autoshake = Value
+        print("Auto Shake Toggle: ", Value)
+    end
+})
+
+local ModdedSection = MainTab:CreateSection("MODDED")
+
+local ToggleFreezePlayer = MainTab:CreateToggle({
+    Name = "Freeze Player",
+    CurrentValue = false,
+    Flag = "FreezePlayerToggle",
+    Callback = function(Value)
+        flags.freezeplayer = Value
+        if not Value then
+            characterposition = nil
+        end
+        print("Freeze Player Toggle: ", Value)
+    end
+})
+
+local ToggleAutoReelBrilliant = MainTab:CreateToggle({
+    Name = "Auto Reel (BRILLIANT)",
+    CurrentValue = false,
+    Flag = "AutoReelBrilliantToggle",
+    Callback = function(Value)
+        flags.autoreel_brilliant = Value
+        if flags.autoreel_brilliant then
+            Connections.AutoReelBrilliant = RunService.RenderStepped:Connect(function()
+                local reel = lp.PlayerGui:FindFirstChild("reel")
+                if not reel then return end
+                local bar = reel:FindFirstChild("bar")
+                if not bar then return end
+                local playerbar = bar:FindFirstChild("playerbar")
+                if not playerbar then return end
+                if flags.freezeplayer and characterposition == nil then
+                    characterposition = gethrp().CFrame
+                end
+                if flags.freezeplayer and characterposition ~= nil then
+                    gethrp().CFrame = characterposition
+                end
+                playerbar.Position = UDim2.new(0.5, 0, 0.5, 0) -- Instantly moves the player bar to the fish position
+                ReplicatedStorage.events.reelfinished:FireServer(100, true) -- Instantly finishes reeling in the fish
+            end)
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Reel (BRILLIANT)",
+                Text = "Auto Reel (BRILLIANT) Enabled",
+                Duration = 5
+            })
+        else
+            if Connections.AutoReelBrilliant then Connections.AutoReelBrilliant:Disconnect() end
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Reel (BRILLIANT)",
+                Text = "Auto Reel (BRILLIANT) Disabled",
+                Duration = 5
+            })
+            characterposition = nil
+        end
+    end
+})
+
+local ToggleAutoReelNonPerfect = MainTab:CreateToggle({
+    Name = "Auto Reel (NON PERFECT)",
+    CurrentValue = false,
+    Flag = "AutoReelNonPerfectToggle",
+    Callback = function(Value)
+        flags.autoreel_nonperfect = Value
+        if flags.autoreel_nonperfect then
+            Connections.AutoReelNonPerfect = RunService.RenderStepped:Connect(function()
+                local rod = FindRod()
+                if rod and rod.values and rod.values.lure and rod.values.lure.Value == 100 then
+                    ReplicatedStorage.events.reelfinished:FireServer(90, true) -- Instantly reels in the fish but not perfectly
+                end
+            end)
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Reel (NON PERFECT)",
+                Text = "Auto Reel (NON PERFECT) Enabled",
+                Duration = 5
+            })
+                else
+            if Connections.AutoReelNonPerfect then Connections.AutoReelNonPerfect:Disconnect() end
+            StarterGui:SetCore("SendNotification", {
+                Title = "Auto Reel (NON PERFECT)",
+                Text = "Auto Reel (NON PERFECT) Disabled",
+                Duration = 5
+            })
+            characterposition = nil
+        end
+    end
+})
+
+RunService.Heartbeat:Connect(function()
+    if flags.freezeplayer and characterposition == nil then
+        characterposition = gethrp().CFrame
+    end
+    if flags.freezeplayer and characterposition ~= nil then
+        gethrp().CFrame = characterposition
+    end
+
+    if flags.autoshake then
+        if lp.PlayerGui:FindFirstChild("shakeui") and lp.PlayerGui.shakeui:FindFirstChild("safezone") and lp.PlayerGui.shakeui.safezone:FindFirstChild("button") then
+            GuiService.SelectedObject = lp.PlayerGui.shakeui.safezone.button
+            if GuiService.SelectedObject == lp.PlayerGui.shakeui.safezone.button then
+                game:GetService('VirtualInputManager'):SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+                game:GetService('VirtualInputManager'):SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+            end
+        end
+    end
+end)
+
+local Connections = {
+    AutoReel = nil,
+    AutoReelBrilliant = nil,
+    AutoReelNonPerfect = nil,
+    AutoCast = nil,
+}
+
+
+local lp = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local function gethrp()
+    return lp.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local TeleportLocations = {
+    ['Moosewood'] = CFrame.new(379.875458, 134.500519, 233.5495),
+    ['Roslit Bay'] = CFrame.new(-1472.9812, 132.525513, 707.644531),
+    ['Forsaken Shores'] = CFrame.new(-2491.104, 133.250015, 1561.2926),
+    ['Sunstone Island'] = CFrame.new(-913.809143, 138.160782, -1133.25879),
+    ['Statue of Sovereignty'] = CFrame.new(21.4017925, 159.014709, -1039.14233),
+    ['Terrapin Island'] = CFrame.new(-193.434143, 135.121979, 1951.46936),
+    ['Snowcap Island'] = CFrame.new(2607.93018, 135.284332, 2436.13208),
+    ['Mushgrove Swamp'] = CFrame.new(2434.29785, 131.983276, -691.930542),
+    ['Ancient Isle'] = CFrame.new(6056.02783, 195.280167, 276.270325),
+    ['Northern Expedition'] = CFrame.new(-1701.02979, 187.638779, 3944.81494),
+    ['Northern Summit'] = CFrame.new(19608.791, 131.420105, 5222.15283),
+    ['Vertigo'] = CFrame.new(-102.40567, -513.299377, 1052.07104),
+    ['Depths Entrance'] = CFrame.new(-15.4965982, -706.123718, 1231.43494),
+    ['Depths'] = CFrame.new(491.758118, -706.123718, 1230.6377),
+    ['Overgrowth Caves'] = CFrame.new(19746.2676, 416.00293, 5403.5752),
+    ['Frigid Cavern'] = CFrame.new(20253.6094, 756.525818, 5772.68555),
+    ['kraken pool'] = CFrame.new(-4291, -880, 1809),
+    ['Cryogenic Canal'] = CFrame.new(19958.5176, 917.195923, 5332.59375),
+    ['Glacial Grotto'] = CFrame.new(20003.0273, 1136.42798, 5555.95996),
+    ["Keeper's Altar"] = CFrame.new(1297.92285, -805.292236, -284.155823)
+}
+
+local RodLocations = {
+    ['Heaven Rod'] = CFrame.new(20025.0508, -467.665955, 7114.40234),
+    ['Summit Rod'] = CFrame.new(20213.334, 736.668823, 5707.8208),
+    ['Kings Rod'] = CFrame.new(1380.83862, -807.198608, -304.22229)
+}
+
+local locationOptions = {}
+for locationName in pairs(TeleportLocations) do
+    table.insert(locationOptions, locationName)
+end
+
+local rodOptions = {}
+for rodName in pairs(RodLocations) do
+    table.insert(rodOptions, rodName)
+end
+
+local selectedLocation = nil
+local selectedRod = nil
+
+local LocationDropdown = TeleportTab:CreateDropdown({
+    Name = "Select Location",
+    Options = locationOptions,
+    CurrentOption = {"Moosewood"},
+    MultipleOptions = false,
+    Flag = "Dropdown1",
+    Callback = function(Options)
+        selectedLocation = Options[1]
+    end,
+})
+
+local RodDropdown = TeleportTab:CreateDropdown({
+    Name = "Select Rod",
+    Options = rodOptions,
+    CurrentOption = {"Heaven Rod"},
+    MultipleOptions = false,
+    Flag = "Dropdown2",
+    Callback = function(Options)
+        selectedRod = Options[1]
+    end,
+})
+
+local TeleportButton = TeleportTab:CreateButton({
+    Name = "Teleport to Location",
+    Callback = function()
+        if selectedLocation and TeleportLocations[selectedLocation] then
+            local hrp = gethrp()
+            if hrp then
+                hrp.CFrame = TeleportLocations[selectedLocation]
+            end
+        else
+            print("Please select a valid location.")
+        end
+    end,
+})
+
+local RodButton = TeleportTab:CreateButton({
+    Name = "Teleport to Rod",
+    Callback = function()
+        if selectedRod and RodLocations[selectedRod] then
+            local hrp = gethrp()
+            if hrp then
+                hrp.CFrame = RodLocations[selectedRod]
+            end
+        else
+            print("Please select a valid rod.")
+        end
+    end,
+})
+
+-- Define necessary variables and functions
+local lp = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local function getchar()
+    return lp.Character
+end
+
+local function gethum()
+    return lp.Character:FindFirstChildOfClass("Humanoid")
+end
+
+local function FindChildOfType(parent, childName, childType)
+    for _, child in pairs(parent:GetChildren()) do
+        if child:IsA(childType) and child.Name == childName then
+            return child
+        end
+    end
+    return nil
+end
+
+local flags = {
+    infoxygen = false,
+    infinitejump = false,
+    flyspeed = 0,
+    fly = false
+}
+
+local deathcon = nil
+
+local CharacterSection = PlayerTab:CreateSection("Character")
+
+local ToggleInfiniteOxygen = PlayerTab:CreateToggle({
+    Name = "Infinite Oxygen",
+    CurrentValue = false,
+    Flag = "ToggleInfiniteOxygen", -- Unique flag for the toggle
+    Callback = function(Value)
+        flags.infoxygen = Value
+        if flags['infoxygen'] then
+            if not deathcon then
+                deathcon = gethum().Died:Connect(function()
+                    task.delay(9, function()
+                        if FindChildOfType(getchar(), 'DivingTank', 'Decal') then
+                            FindChildOfType(getchar(), 'DivingTank', 'Decal'):Destroy()
+                        end
+                        local oxygentank = Instance.new('Decal')
+                        oxygentank.Name = 'DivingTank'
+                        oxygentank.Parent = workspace
+                        oxygentank:SetAttribute('Tier', 1/0)
+                        oxygentank.Parent = getchar()
+                        deathcon = nil
+                    end)
+                end)
+            end
+            if deathcon and gethum().Health > 0 then
+                if not getchar():FindFirstChild('DivingTank') then
+                    local oxygentank = Instance.new('Decal')
+                    oxygentank.Name = 'DivingTank'
+                    oxygentank.Parent = workspace
+                    oxygentank:SetAttribute('Tier', 1/0)
+                    oxygentank.Parent = getchar()
+                end
+            end
+        else
+            if FindChildOfType(getchar(), 'DivingTank', 'Decal') then
+                FindChildOfType(getchar(), 'DivingTank', 'Decal'):Destroy()
+            end
+        end
+    end,
+})
+
+local ToggleInfiniteJump = PlayerTab:CreateToggle({
+    Name = "Infinite Jump",
+    CurrentValue = false,
+    Flag = "ToggleInfiniteJump", -- Unique flag for the toggle
+    Callback = function(Value)
+        flags.infinitejump = Value
+    end,
+})
+
+-- Infinite Jump Function
+UserInputService.JumpRequest:Connect(function()
+    if flags.infinitejump and gethum() then
+        gethum():ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+local StatisticsSection = PlayerTab:CreateSection("Statistics")
+
+local WalkSpeedInput = PlayerTab:CreateInput({
+    Name = "Walk Speed",
+    CurrentValue = "",
+    PlaceholderText = "Enter Walk Speed",
+    RemoveTextAfterFocusLost = false,
+    Flag = "WalkSpeedInput",
+    Callback = function(Text)
+        local speed = tonumber(Text)
+        if speed and gethum() then
+            gethum().WalkSpeed = speed
+        end
+    end,
+})
+
+local JumpHeightInput = PlayerTab:CreateInput({
+    Name = "Jump Height",
+    CurrentValue = "",
+    PlaceholderText = "Enter Jump Height",
+    RemoveTextAfterFocusLost = false,
+    Flag = "JumpHeightInput",
+    Callback = function(Text)
+        local height = tonumber(Text)
+        if height and gethum() then
+            gethum().JumpPower = height
+        end
+    end,
+})
+
+local FlySection = PlayerTab:CreateSection("Fly")
+
+local FlySpeedInput = PlayerTab:CreateInput({
+    Name = "Fly Speed",
+    CurrentValue = "",
+    PlaceholderText = "Enter Fly Speed",
+    RemoveTextAfterFocusLost = false,
+    Flag = "FlySpeedInput",
+    Callback = function(Text)
+        local speed = tonumber(Text)
+        if speed then
+            -- Update the fly speed variable
+            flags.flyspeed = speed
+        end
+    end,
+})
+
+local ToggleFly = PlayerTab:CreateToggle({
+    Name = "Toggle Fly",
+    CurrentValue = false,
+    Flag = "ToggleFly", -- Unique flag for the toggle
+    Callback = function(Value)
+        flags.fly = Value
+        if flags.fly then
+            -- Enable fly mode
+            if not gethum().PlatformStand then
+                gethum().PlatformStand = true
+            end
+            if flags.flyspeed then
+                lp.Character.HumanoidRootPart.Velocity = Vector3.new(0, flags.flyspeed, 0)
+            end
+        else
+            -- Disable fly mode
+            if gethum().PlatformStand then
+                gethum().PlatformStand = false
+                lp.Character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
+    end,
+})
+
+-- Update fly speed in real-time
+RunService.Heartbeat:Connect(function()
+    if flags.fly and flags.flyspeed then
+        lp.Character.HumanoidRootPart.Velocity = Vector3.new(0, flags.flyspeed, 0)
+    end
+end)
+
+local BypassSection = BypassTab:CreateSection("Anti-Kick & Auto-Rejoin")
+
+-- Anti-Kick function
+local function AntiKick()
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(...)
+        local args = {...}
+        if tostring(args[1]) == "Kick" then
+            return wait(9e9) -- Prevent getting kicked
+        end
+        return oldNamecall(...)
+    end)
+    setreadonly(mt, true)
+end
+
+-- Auto-Rejoin function
+local function AutoRejoin()
+    game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+        if obj.Name == "ErrorPrompt" then
+            game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+        end
+    end)
+end
+
+-- Add toggle buttons to GUI
+BypassTab:CreateToggle({
+    Name = "Enable Anti-Kick",
+    CurrentValue = false,
+    Flag = "AntiKickToggle",
+    Callback = function(Value)
+        if Value then
+            AntiKick()
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "Bypass Active",
+                Text = "Anti-Kick Enabled!",
+                Duration = 5
+            })
+        end
+    end
+})
+
+BypassTab:CreateToggle({
+    Name = "Enable Auto-Rejoin",
+    CurrentValue = false,
+    Flag = "AutoRejoinToggle",
+    Callback = function(Value)
+        if Value then
+            AutoRejoin()
+            game.StarterGui:SetCore("SendNotification", {
+                Title = "Bypass Active",
+                Text = "Auto-Rejoin Enabled!",
+                Duration = 5
+            })
+        end
+    end
+})
+
+local flags = {
+    autoreel = false,
+    autoreel_brilliant = false,
+    autoreel_nonperfect = false,
+    autoshake = false,
+    autocast = false,
+    freezechar = false,
+    freezeplayer = false
+}
+
+local lp = game.Players.LocalPlayer
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local PlayerGui = lp:WaitForChild("PlayerGui")
+local characterposition = nil
+
+local function gethrp()
+    return lp.Character:FindFirstChild("HumanoidRootPart")
+end
+
+-- Ultimate Anti-Kick function
+local function UltimateAntiKick()
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(self, ...)
+        local args = {...}
+        if tostring(self) == "Kick" or tostring(self) == "Disconnect" then
+            return wait(9e9) -- Prevents any kick attempt
+        end
+        return oldNamecall(self, ...)
+    end)
+    setreadonly(mt, true)
+end
+
+ProtectionTab:CreateToggle({
+    Name = "Enable Ultimate Anti-Kick",
+    CurrentValue = false,
+    Flag = "UltimateAntiKickToggle",
+    Callback = function(Value)
+        if Value then
+            UltimateAntiKick()
+            StarterGui:SetCore("SendNotification", {
+                Title = "Protection Active",
+                Text = "Ultimate Anti-Kick Enabled!",
+                Duration = 5
+            })
+        end
+    end
+})
+
+-- Anti-Kick function
+local function AntiKick()
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    setreadonly(mt, false)
+    mt.__namecall = newcclosure(function(...)
+        local args = {...}
+        if tostring(args[1]) == "Kick" then
+            return wait(9e9) -- Prevent getting kicked
+        end
+        return oldNamecall(...)
+    end)
+    setreadonly(mt, true)
+end
+
+-- Auto-Rejoin function
+local function AutoRejoin()
+    game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(obj)
+        if obj.Name == "ErrorPrompt" then
+            game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+        end
+    end)
+end
+
+BypassTab:CreateToggle({
+    Name = "Enable Anti-Kick",
+    CurrentValue = false,
+    Flag = "AntiKickToggle",
+    Callback = function(Value)
+        if Value then
+            AntiKick()
+            StarterGui:SetCore("SendNotification", {
+                Title = "Bypass Active",
+                Text = "Anti-Kick Enabled!",
+                Duration = 5
+            })
+        end
+    end
+})
+
+BypassTab:CreateToggle({
+    Name = "Enable Auto-Rejoin",
+    CurrentValue = false,
+    Flag = "AutoRejoinToggle",
+    Callback = function(Value)
+        if Value then
+            AutoRejoin()
+            StarterGui:SetCore("SendNotification", {
+                Title = "Bypass Active",
+                Text = "Auto-Rejoin Enabled!",
+                Duration = 5
+            })
+        end
+    end
+})
